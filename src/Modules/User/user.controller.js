@@ -1,0 +1,10 @@
+import { Router } from "express";
+import * as userService from "./user.service.js";
+import { authentication } from "../../Middlewares/auth.middleware.js";
+import { localFileUpload } from "../../Utils/multer/local.multer.js";
+const router = Router();
+router.get("/users", userService.getAllUsers);
+router.patch("/update", authentication, userService.updateProfile);
+router.patch("/changePassword", authentication, userService.changePassword);
+router.patch("/profile-image", authentication, localFileUpload().single("profileImage"),userService.profileImage);
+export default router;

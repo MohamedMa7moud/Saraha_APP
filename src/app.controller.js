@@ -4,11 +4,13 @@ import MessageRouter from "./Modules/Message/message.controller.js";
 import UserRouter from "./Modules/User/user.controller.js";
 import { globalError } from "./Utils/errorHandler.utils.js";
 import cors from "cors";
-
+import path from "node:path";
 const bootstrap = async (app, express) => {
   app.use(express.json());
   app.use(cors());
   await connectDB();
+
+  app.use("/uploads", express.static(path.resolve("./src/uploads")));
 
   app.use("/api/v1/auth", AuthRouter);
 

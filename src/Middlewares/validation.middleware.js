@@ -2,7 +2,7 @@ import joi from "joi";
 import { genderEnum } from "../DB/Models/user.model.js";
 
 export const validation = (schema) => {
-  return  (req, res, next) => {
+  return (req, res, next) => {
     const validationError = [];
     for (const key of Object.keys(schema)) {
       const validationResult = schema[key].validate(req[key], {
@@ -14,7 +14,9 @@ export const validation = (schema) => {
     }
 
     if (validationError.length) {
-      return res.status(400).json({message:"Validation Error" , details:validationError})
+      return res
+        .status(400)
+        .json({ message: "Validation Error", details: validationError });
     }
     return next();
   };
@@ -80,4 +82,15 @@ export const generalFields = {
       Types.ObjectId.isValid(value) || helper.message("invalid ObjectId Format")
     );
   }),
+  file: {
+    fieldname: joi.string(),
+    originalname: joi.string(),
+    encoding: joi.string(),
+    mimetype: joi.string(),
+    size: joi.number().positive(),
+    destination: joi.string(),
+    filename: joi.string(),
+    path: joi.string(),
+    finalPath: joi.string(),
+  },
 };

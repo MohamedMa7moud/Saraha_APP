@@ -90,6 +90,10 @@ const userSchema = new mongoose.Schema(
         return this.provider === providerEnum.SYSTEM;
       },
     },
+    profileImage: String,
+    coverImages:[String],
+    cloudProfileImage: {public_id:String , secure_url:String},
+    cloudCoverImages:[{public_id:String , secure_url:String}],
     confirmEmail: {
       type: Date,
     },

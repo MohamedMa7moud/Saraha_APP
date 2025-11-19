@@ -1,5 +1,6 @@
 import joi from "joi";
 import { generalFields } from "../../Middlewares/validation.middleware.js";
+import { roleEnum } from "../../DB/Models/user.model.js";
 export const login = {
   body: joi.object({
     email: generalFields.email.required(),
@@ -17,8 +18,8 @@ export const register = {
       confirmPassword: generalFields.confirmPassword.required(),
       gender: generalFields.gender.required(),
       phone: generalFields.phone.required(),
+      role:joi.string().valid('USER' , 'ADMIN').default(roleEnum.USER)
     })
-    .required()
     .options({ allowUnknown: false }),
 };
 

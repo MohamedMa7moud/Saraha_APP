@@ -9,6 +9,11 @@ export const providerEnum = {
   GOOGLE: "GOOGLE",
 };
 
+export const roleEnum = {
+  USER: "USER",
+  ADMIN: "ADMIN",
+};
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -74,6 +79,13 @@ const userSchema = new mongoose.Schema(
       },
       default: genderEnum.Male,
     },
+    role: {
+      type: String,
+      enum: {
+        values: Object.values(roleEnum),
+      },
+      default: roleEnum.USER,
+    },
     provider: {
       type: String,
       required: true,
@@ -91,9 +103,9 @@ const userSchema = new mongoose.Schema(
       },
     },
     profileImage: String,
-    coverImages:[String],
-    cloudProfileImage: {public_id:String , secure_url:String},
-    cloudCoverImages:[{public_id:String , secure_url:String}],
+    coverImages: [String],
+    cloudProfileImage: { public_id: String, secure_url: String },
+    cloudCoverImages: [{ public_id: String, secure_url: String }],
     confirmEmail: {
       type: Date,
     },

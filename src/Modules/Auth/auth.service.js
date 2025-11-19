@@ -6,13 +6,25 @@ import { compare } from "../../Utils/Hashing/hashing.utils.js";
 import { hash } from "../../Utils/Hashing/hashing.utils.js";
 import { Emitter } from "../../Utils/Events/email.event.utils.js";
 import { customAlphabet } from "nanoid";
-import { generateToken, verifyToken } from "../../Utils/Tokens/token.utils.js";
+import {
+  generateToken,
+  verifyToken,
+  getNewLoginCredientials,
+} from "../../Utils/Tokens/token.utils.js";
 import { v4 as uuid } from "uuid";
 import TokenModel from "../../DB/Models/token.model.js";
 import { OAuth2Client } from "google-auth-library";
 export const Register = async (req, res, next) => {
-  const { firstName, middleName, lastName, email, password, gender, phone } =
-    req.body;
+  const {
+    firstName,
+    middleName,
+    lastName,
+    email,
+    password,
+    gender,
+    phone,
+    role,
+  } = req.body;
 
   const checkUser = await DBService.findOne({
     model: UserModel,
@@ -35,6 +47,7 @@ export const Register = async (req, res, next) => {
         password: await hash({ plainText: password }),
         gender,
         phone: asymmetricencrypt(phone),
+        role,
         confirmEmailOtp: await hash({ plainText: otp }),
         otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
       },
@@ -64,29 +77,13 @@ export const login = async (req, res, next) => {
   if (!userData.confirmEmail)
     return next(new Error("Confirm Your Email", { cause: 400 }));
 
-  const accessToken = await generateToken({
-    payload: { id: userData._id, email: userData.email },
-    secretKey: process.env.ACCESS_TOKEN_SECRET,
-    options: {
-      expiresIn: parseInt(process.env.ACCESS_TOKEN_EXPIRE_IN),
-      jwtid: uuid(),
-    },
-  });
-
-  const refreshToken = await generateToken({
-    payload: { id: userData._id, email: userData.email },
-    secretKey: process.env.REFRESH_TOKEN_SECRET,
-    options: {
-      expiresIn: parseInt(process.env.REFRESH_TOKEN_EXPIRE_IN),
-      jwtid: uuid(),
-    },
-  });
+  const creidentials = await getNewLoginCredientials(userData);
 
   return SuccessResponse({
     res,
     statusCode: 200,
     message: "Successfully LoggedIn , Welcome Back",
-    data: { accessToken, refreshToken },
+    data: { creidentials },
   });
 };
 
@@ -146,26 +143,14 @@ export const logout = async (req, res, next) => {
 };
 
 export const refreshToken = async (req, res, next) => {
-  const { refreshtoken } = req.headers;
-
-  const decoded = verifyToken({
-    token: refreshtoken,
-    secretKey: process.env.REFRESH_TOKEN_SECRET,
-  });
-  const accessToken = await generateToken({
-    payload: { id: decoded.id, email: decoded.email },
-    secretKey: process.env.ACCESS_TOKEN_SECRET,
-    options: {
-      expiresIn: parseInt(process.env.ACCESS_TOKEN_EXPIRE_IN),
-      jwtid: uuid(),
-    },
-  });
+  const user = req.user;
+const creidentials = await getNewLoginCredientials(user);
 
   return SuccessResponse({
     res,
     statusCode: 200,
     message: "Token has been Refreshed Successfully",
-    data: { accessToken },
+    data: { creidentials },
   });
 };
 
@@ -246,29 +231,13 @@ export const loginWithGoogle = async (req, res, next) => {
   });
   if (user) {
     if (user.provider === providerEnum.GOOGLE) {
-      const accessToken = await generateToken({
-        payload: { id: user._id, email: user.email },
-        secretKey: process.env.ACCESS_TOKEN_SECRET,
-        options: {
-          expiresIn: parseInt(process.env.ACCESS_TOKEN_EXPIRE_IN),
-          jwtid: uuid(),
-        },
-      });
-
-      const refreshToken = await generateToken({
-        payload: { id: user._id, email: user.email },
-        secretKey: process.env.REFRESH_TOKEN_SECRET,
-        options: {
-          expiresIn: parseInt(process.env.REFRESH_TOKEN_EXPIRE_IN),
-          jwtid: uuid(),
-        },
-      });
+      const creidentials = await getNewLoginCredientials(user);
 
       return SuccessResponse({
         res,
         statusCode: 200,
         message: "Successfully LoggedIn , Welcome Back",
-        data: { accessToken, refreshToken },
+        data: { creidentials },
       });
     }
   }
@@ -284,27 +253,11 @@ export const loginWithGoogle = async (req, res, next) => {
       },
     ],
   });
-  const accessToken = await generateToken({
-    payload: { id: newUser._id, email: newUser.email },
-    secretKey: process.env.ACCESS_TOKEN_SECRET,
-    options: {
-      expiresIn: parseInt(process.env.ACCESS_TOKEN_EXPIRE_IN),
-      jwtid: uuid(),
-    },
-  });
-
-  const refreshToken = await generateToken({
-    payload: { id: newUser._id, email: newUser.email },
-    secretKey: process.env.REFRESH_TOKEN_SECRET,
-    options: {
-      expiresIn: parseInt(process.env.REFRESH_TOKEN_EXPIRE_IN),
-      jwtid: uuid(),
-    },
-  });
+  const creidentials = await getNewLoginCredientials(newUser);
   return SuccessResponse({
     res,
     statusCode: 200,
     message: "Logged in Gmail Account Sucessfully",
-    data: { accessToken, refreshToken },
+    data: { creidentials },
   });
 };

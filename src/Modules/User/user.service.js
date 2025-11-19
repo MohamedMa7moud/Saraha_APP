@@ -31,7 +31,7 @@ export const updateProfile = async (req, res, next) => {
   const { firstName, middleName, LastName } = req.body;
   const user = await DBService.findByIdAndUpdate({
     model: UserModel,
-    id: req.decoded.id,
+    id: req.user.id,
     data: { firstName, middleName, LastName, $inc: { __v: 1 } },
     options: { new: true },
   });

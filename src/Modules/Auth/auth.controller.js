@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as AuthService from "./auth.service.js";
-import { authentication } from "../../Middlewares/auth.middleware.js";
+import { authentication, tokenTypeEnum } from "../../Middlewares/auth.middleware.js";
 import { validation } from "../../Middlewares/validation.middleware.js";
 import * as validators from "./auth.validation.js";
 const router = Router();
@@ -12,8 +12,8 @@ router.patch(
   validation(validators.confirmEmail),
   AuthService.confirmEmail
 );
-router.post("/revokeToken", authentication, AuthService.logout);
-router.post("/refreshToken", AuthService.refreshToken);
+router.post("/revokeToken", authentication({tokentype:tokenTypeEnum.ACCESS}), AuthService.logout);
+router.post("/refreshToken", authentication({tokentype:tokenTypeEnum.REFRESH}), AuthService.refreshToken);
 router.patch(
   "/forgetPassword",
   validation(validators.forgetPassword),

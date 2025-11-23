@@ -44,3 +44,9 @@ export const resetPassword = {
     confirmPassword: generalFields.confirmPassword.required(),
   }),
 };
+export const twoStep = {
+  body: joi.object({
+    email: generalFields.email.required(),
+    otp: generalFields.otp.required(),
+  }),
+};

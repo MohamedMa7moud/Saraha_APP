@@ -1,5 +1,5 @@
 import * as DBService from "../../DB/DBService.js";
-import UserModel from "../../DB/Models/user.model.js";
+import UserModel, { roleEnum } from "../../DB/Models/user.model.js";
 import { SuccessResponse } from "../../Utils/SuccessResponse.utils.js";
 import { hash, compare } from "../../Utils/Hashing/hashing.utils.js";
 import { cloudinaryConfig } from "../../Utils/multer/cloudinary.config.js";
@@ -8,17 +8,6 @@ export const getAllUsers = async (req, res, next) => {
     model: UserModel,
     populate: [{ path: "messages", select: "content -_id -receiverId" }],
   });
-
-  // if (users.length === 0) {
-  //   return next(
-  //     new Error("Sorry Cann't Found Any users in this Database!!", {
-  //       cause: 404,
-  //     })
-  //   );
-
-  // users = users.map((user) => {
-  //   return { ...user._doc, phone: asymmetricdecrypt(user.phone) };
-  // });
   return SuccessResponse({
     res,
     statusCode: 200,
@@ -127,5 +116,94 @@ export const coverImages = async (req, res, next) => {
     statusCode: 200,
     message: "images has been Updated Sucessfully",
     data: { user },
+  });
+};
+
+export const freezeAccount = async (req, res, next) => {
+  const { userId } = req.params;
+  if (userId && req.user.role !== roleEnum.ADMIN)
+    return next(new Error("u're cann't Freeze Account", { cause: 401 }));
+
+  const updateUser = await DBService.findOneAndUpdate({
+    model: UserModel,
+    filter: {
+      _id: userId || req.user._id,
+      freezedAt: { $exists: false },
+    },
+    data: { freezedAt: Date.now(), freezedBy: req.user._id },
+  });
+  if (!updateUser) return next(new Error("In-valid Account"));
+  return SuccessResponse({
+    res,
+    statusCode: 200,
+    message: "User has been Freezed",
+    data: { user: updateUser },
+  });
+};
+
+export const restoreAccount = async (req, res, next) => {
+  const { userId } = req.params;
+
+  const user = await DBService.findOne({
+    model: UserModel,
+    filter: {
+      _id: userId || req.user._id,
+      freezedAt: { $exists: true },
+      freezedBy: { $exists: true },
+    },
+  });
+
+  if (!user) return next(new Error("Account is not found or not frozen"));
+
+  const isFreezed = user.freezedBy === user._id;
+
+  if (isFreezed) {
+    if (req.user._id !== user._id) {
+      return next(new Error("Only the user can restore the own account"));
+    }
+  }
+  if (req.user.role !== "ADMIN")
+    return next(
+      new Error(
+        "This account was suspended by Admin Only Admins can restore it"
+      )
+    );
+
+  const restoreUser = await DBService.findOneAndUpdate({
+    model: UserModel,
+    filter: {
+      _id: user._id,
+    },
+    data: {
+      $unset: { freezedAt: true, freezedBy: true },
+      restoredAt: Date.now(),
+      restoredBy: req.user._id,
+    },
+  });
+  if (!restoreUser) return next(new Error("In-valid Account"));
+  return SuccessResponse({
+    res,
+    statusCode: 200,
+    message: "User has been Restored",
+    data: { user: restoreUser },
+  });
+};
+
+export const deleteAccount = async (req, res, next) => {
+  const { userId } = req.params;
+
+  const deleteUser = await DBService.findOneAndDelete({
+    model: UserModel,
+    filter: {
+      _id: userId || req.user._id,
+      freezedAt: { $exists: true },
+      freezedBy: { $exists: true },
+    },
+  });
+  if (!deleteUser) return next(new Error("In-valid Account"));
+  return SuccessResponse({
+    res,
+    statusCode: 200,
+    message: "User has been got Hard Deleted ",
   });
 };

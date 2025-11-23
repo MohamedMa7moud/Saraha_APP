@@ -7,13 +7,14 @@ import cors from "cors";
 import path from "node:path";
 import { attachRouterWithLogger } from "./Utils/Logger/logger.js";
 import helmet from "helmet";
-
+import { corsOption } from "./Utils/cors/cors.utils.js";
+import { ratelimiter } from "./Utils/RateLimiter/rateLimit.js";
 const bootstrap = async (app, express) => {
   app.use(express.json({ limit: "1kb" }));
-  app.use(cors());
-  app.use(helmet())
+  app.use(cors(corsOption()));
+  app.use(helmet());
+  app.use(ratelimiter);
   await connectDB();
-
   attachRouterWithLogger(app, "/api/v1/auth", AuthRouter, "auth.log");
   attachRouterWithLogger(app, "/api/v1/user", UserRouter, "user.log");
   attachRouterWithLogger(app, "/api/v1/message", MessageRouter, "message.log");

@@ -1,6 +1,9 @@
 import { Router } from "express";
 import * as AuthService from "./auth.service.js";
-import { authentication, tokenTypeEnum } from "../../Middlewares/auth.middleware.js";
+import {
+  authentication,
+  tokenTypeEnum,
+} from "../../Middlewares/auth.middleware.js";
 import { validation } from "../../Middlewares/validation.middleware.js";
 import * as validators from "./auth.validation.js";
 const router = Router();
@@ -12,8 +15,16 @@ router.patch(
   validation(validators.confirmEmail),
   AuthService.confirmEmail
 );
-router.post("/revokeToken", authentication({tokentype:tokenTypeEnum.ACCESS}), AuthService.logout);
-router.post("/refreshToken", authentication({tokentype:tokenTypeEnum.REFRESH}), AuthService.refreshToken);
+router.post(
+  "/revokeToken",
+  authentication({ tokentype: tokenTypeEnum.ACCESS }),
+  AuthService.logout
+);
+router.post(
+  "/refreshToken",
+  authentication({ tokentype: tokenTypeEnum.REFRESH }),
+  AuthService.refreshToken
+);
 router.patch(
   "/forgetPassword",
   validation(validators.forgetPassword),
@@ -24,5 +35,11 @@ router.patch(
   validation(validators.resetPassword),
   AuthService.resetPassword
 );
-router.post("/social-login" , AuthService.loginWithGoogle)
+router.post("/social-login", AuthService.loginWithGoogle);
+
+router.post(
+  "/two-step-verify",
+  validation(validators.twoStep),
+  AuthService.Confirm2FA
+);
 export default router;

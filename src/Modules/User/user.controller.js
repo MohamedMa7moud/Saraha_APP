@@ -11,7 +11,13 @@ import {
   localFileUpload,
 } from "../../Utils/multer/local.multer.js";
 import { validation } from "../../Middlewares/validation.middleware.js";
-import { profileImageSchema, coverImagesSchema } from "./user.validation.js";
+import {
+  profileImageSchema,
+  coverImagesSchema,
+  freezeAccountSchema,
+  restoreAccountSchema,
+  deleteAccountSchema,
+} from "./user.validation.js";
 import { cloudFileUpload } from "../../Utils/multer/cloud.multer.js";
 import { roleEnum } from "../../DB/Models/user.model.js";
 const router = Router();
@@ -52,5 +58,29 @@ router.patch(
     3
   ),
   userService.coverImages
+);
+
+router.delete(
+  "{/:userId}/freeze-account",
+  authentication({ tokentype: tokenTypeEnum.ACCESS }),
+  authorization({ accessRoles: [roleEnum.USER, roleEnum.ADMIN] }),
+  validation(freezeAccountSchema),
+  userService.freezeAccount
+);
+
+router.patch(
+  "{/:userId}/restore-account",
+  authentication({ tokentype: tokenTypeEnum.ACCESS }),
+  authorization({ accessRoles: [roleEnum.USER, roleEnum.ADMIN] }),
+  validation(restoreAccountSchema),
+  userService.restoreAccount
+);
+
+router.delete(
+  "{/:userId}/delete-account",
+  authentication({ tokentype: tokenTypeEnum.ACCESS }),
+  authorization({ accessRoles: [roleEnum.ADMIN] }),
+  validation(deleteAccountSchema),
+  userService.deleteAccount
 );
 export default router;

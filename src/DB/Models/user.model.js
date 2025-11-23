@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { ref } from "node:process";
 
 export const genderEnum = {
   Male: "Male",
@@ -106,6 +107,10 @@ const userSchema = new mongoose.Schema(
     coverImages: [String],
     cloudProfileImage: { public_id: String, secure_url: String },
     cloudCoverImages: [{ public_id: String, secure_url: String }],
+    freezedAt: Date,
+    freezedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    restoredAt: Date,
+    restoredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     confirmEmail: {
       type: Date,
     },
@@ -114,6 +119,9 @@ const userSchema = new mongoose.Schema(
     otpExpiresAt: { type: Date },
     forgetPasswordOTP: { type: String },
     forgetPasswordOTPExpiresAt: { type: Date },
+    verify2FAOTP:{type:String},
+    OTP2FAExpires: { type: Date },
+
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

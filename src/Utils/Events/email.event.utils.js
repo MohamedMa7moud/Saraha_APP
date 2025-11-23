@@ -23,3 +23,13 @@ Emitter.on("forgetPassword", async (data) => {
     console.log(`error to Sending forgetPassword!! ${err}`);
   });
 });
+
+Emitter.on("two-step-verify", async (data) => {
+  await sendEmail({
+    to: data.to,
+    subject: emailSubject.twoStep,
+    html: template(data.otp , data.firstName,emailSubject.twoStep ),
+  }).catch((err) => {
+    console.log(`error to Sending Two-step verify!! ${err}`);
+  });
+});

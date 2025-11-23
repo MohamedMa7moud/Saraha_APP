@@ -6,12 +6,7 @@ import { compare } from "../../Utils/Hashing/hashing.utils.js";
 import { hash } from "../../Utils/Hashing/hashing.utils.js";
 import { Emitter } from "../../Utils/Events/email.event.utils.js";
 import { customAlphabet } from "nanoid";
-import {
-  generateToken,
-  verifyToken,
-  getNewLoginCredientials,
-} from "../../Utils/Tokens/token.utils.js";
-import { v4 as uuid } from "uuid";
+import { getNewLoginCredientials } from "../../Utils/Tokens/token.utils.js";
 import TokenModel from "../../DB/Models/token.model.js";
 import { OAuth2Client } from "google-auth-library";
 export const Register = async (req, res, next) => {
@@ -53,6 +48,7 @@ export const Register = async (req, res, next) => {
       },
     ],
   });
+
   Emitter.emit("confirmEmail", { to: email, otp, firstName });
   return SuccessResponse({
     res,
@@ -77,14 +73,54 @@ export const login = async (req, res, next) => {
   if (!userData.confirmEmail)
     return next(new Error("Confirm Your Email", { cause: 400 }));
 
-  const creidentials = await getNewLoginCredientials(userData);
+  const generateOTP = customAlphabet("2543IFH839RFG%$H@DSAE58", 6)();
+  const otpHash = await hash({ plainText: generateOTP });
+  const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+
+  await DBService.updateOne({
+    model: UserModel,
+    filter: { _id: userData._id },
+    data: {
+      verify2FAOTP: otpHash,
+      OTP2FAExpires: otpExpires,
+    },
+  });
+
+  Emitter.emit("two-step-verify", {
+    to: email,
+    otp: generateOTP,
+    name: userData.firstName,
+  });
 
   return SuccessResponse({
     res,
     statusCode: 200,
-    message: "Successfully LoggedIn , Welcome Back",
-    data: { creidentials },
+    message: "Please Verify 2FA OTP ,Check our email",
   });
+};
+
+export const Confirm2FA = async (req, res, next) => {
+  const { email, otp } = req.body;
+  const user = await DBService.findOne({ model: UserModel, filter: { email } });
+  if (!user) return next(new Error("User Not Found!", { cause: 404 }));
+  if (!user.verify2FAOTP)
+    return next(new Error("NO 2FA Found", { cause: 400 }));
+  if (user.OTP2FAExpires < Date.now())
+    return next(new Error("OTP Expired", { cause: 400 }));
+  const match = await compare({ plainText: otp, hash: user.verify2FAOTP });
+  if (!match) return next(new Error("Invalid OTP", { cause: 400 }));
+
+  const creidentials = await getNewLoginCredientials(user);
+  await DBService.updateOne({
+    model: UserModel,
+    filter: { _id: user._id },
+    data: { $unset: { verify2FAOTP: true, OTP2FAExpires: true } },
+  });
+  return SuccessResponse({res,
+    statusCode:200,
+    message:"Logged In Successfully",
+    data:{creidentials}
+  })
 };
 
 export const confirmEmail = async (req, res, next) => {
@@ -144,7 +180,7 @@ export const logout = async (req, res, next) => {
 
 export const refreshToken = async (req, res, next) => {
   const user = req.user;
-const creidentials = await getNewLoginCredientials(user);
+  const creidentials = await getNewLoginCredientials(user);
 
   return SuccessResponse({
     res,
@@ -227,7 +263,7 @@ export const loginWithGoogle = async (req, res, next) => {
     return next(new Error("Email Not Verified", { cause: 401 }));
   const user = await DBService.findOne({
     model: UserModel,
-    filter: { email },
+    filter: { email, freezedAt: { $exists: false } },
   });
   if (user) {
     if (user.provider === providerEnum.GOOGLE) {

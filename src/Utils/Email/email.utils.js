@@ -35,4 +35,5 @@ export const emailSubject = {
   confirmEmail: "Please Confirm Your Email",
   resetPassword: "Reset Your Password",
   welcome: "Welcome in Route Academy ❤️",
+  twoStep:"Someone want to login Our Account if u're try login from another Device , Confirm It by This Code"
 };
